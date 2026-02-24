@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 // Note: In a real production app, you might want to proxy this through a backend to protect the key,
 // but for this client-side demo as per instructions, we use it directly if the user provides it.
 // The environment variable is injected by the platform.
-const apiKey = process.env.GEMINI_API_KEY || "AIzaSyDUHAFradgTJMDuxs6hZFM290EcRGMiVU8";
+const apiKey = process.env.GEMINI_API_KEY || "AIzaSyD6lh7BMvxIhtiQ3k-6TiAxuehmhGNoEkY";
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export async function translateText(text: string, targetLanguage: string): Promise<string> {
@@ -21,27 +21,14 @@ export async function translateText(text: string, targetLanguage: string): Promi
     Text to translate:
     "${text}"`;
 
-    try {
-      const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-      });
-      return result.text || "Translation failed.";
-    } catch (primaryError) {
-      console.warn("Primary model failed, attempting fallback...", primaryError);
-      try {
-        // Fallback to a different model if the primary one fails (e.g., due to access/quota)
-        const result = await ai.models.generateContent({
-          model: "gemini-2.0-flash-exp",
-          contents: prompt,
-        });
-        return result.text || "Translation failed.";
-      } catch (fallbackError: any) {
-        throw fallbackError; // Throw to outer catch block
-      }
-    }
-  } catch (error: any) {
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+    });
+    
+    return result.text || "Translation failed.";
+  } catch (error) {
     console.error("Translation error:", error);
-    return `Error: ${error.message || "Unknown error occurred during translation."}`;
+    return "Error during translation. Please try again.";
   }
 }
