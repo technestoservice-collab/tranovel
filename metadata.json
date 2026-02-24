@@ -1,0 +1,5 @@
+{
+  "name": "Novel Translator",
+  "description": "Upload PDF novels and translate selected text instantly into your preferred language.",
+  "requestFramePermissions": []
+}

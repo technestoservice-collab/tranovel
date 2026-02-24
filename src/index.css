@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .pdf-page-container canvas {
+    @apply shadow-md rounded-sm mx-auto;
+    max-width: 100%;
+    height: auto !important;
+  }
+  
+  .react-pdf__Page__textContent {
+    @apply select-text;
+  }
+
+  .react-pdf__Page__annotations {
+    @apply hidden;
+  }
+}
+
+/* Custom scrollbar for the reader */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
