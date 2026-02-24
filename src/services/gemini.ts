@@ -21,14 +21,27 @@ export async function translateText(text: string, targetLanguage: string): Promi
     Text to translate:
     "${text}"`;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-    });
-    
-    return result.text || "Translation failed.";
-  } catch (error) {
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+      });
+      return result.text || "Translation failed.";
+    } catch (primaryError) {
+      console.warn("Primary model failed, attempting fallback...", primaryError);
+      try {
+        // Fallback to a different model if the primary one fails (e.g., due to access/quota)
+        const result = await ai.models.generateContent({
+          model: "gemini-2.0-flash-exp",
+          contents: prompt,
+        });
+        return result.text || "Translation failed.";
+      } catch (fallbackError: any) {
+        throw fallbackError; // Throw to outer catch block
+      }
+    }
+  } catch (error: any) {
     console.error("Translation error:", error);
-    return "Error during translation. Please try again.";
+    return `Error: ${error.message || "Unknown error occurred during translation."}`;
   }
 }
