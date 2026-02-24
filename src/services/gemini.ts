@@ -4,7 +4,9 @@ import { GoogleGenAI } from "@google/genai";
 // Note: In a real production app, you might want to proxy this through a backend to protect the key,
 // but for this client-side demo as per instructions, we use it directly if the user provides it.
 // The environment variable is injected by the platform.
-const apiKey = process.env.GEMINI_API_KEY || "AIzaSyD6lh7BMvxIhtiQ3k-6TiAxuehmhGNoEkY";
+// User explicitly requested to use this specific API key
+const userProvidedKey = "AIzaSyD6lh7BMvxIhtiQ3k-6TiAxuehmhGNoEkY";
+const apiKey = userProvidedKey || process.env.GEMINI_API_KEY;
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export async function translateText(text: string, targetLanguage: string): Promise<string> {
@@ -27,8 +29,8 @@ export async function translateText(text: string, targetLanguage: string): Promi
     });
     
     return result.text || "Translation failed.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Translation error:", error);
-    return "Error during translation. Please try again.";
+    return `Error: ${error.message || "Unknown error occurred"}`;
   }
 }
