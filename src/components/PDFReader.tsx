@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, Upload, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, Upload, BookOpen, MousePointerClick } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -22,6 +22,7 @@ export default function PDFReader({ file, onTextSelected, onReset }: PDFReaderPr
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isSelectionMode, setIsSelectionMode] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
@@ -37,11 +38,48 @@ export default function PDFReader({ file, onTextSelected, onReset }: PDFReaderPr
   }
 
   const handleMouseUp = () => {
+    // Only use mouse selection if NOT in tap-to-select mode
+    if (isSelectionMode) return;
+    
     const selection = window.getSelection();
     if (selection && selection.toString().trim().length > 0) {
       onTextSelected(selection.toString());
     }
   };
+
+  // Handle tap-to-select logic
+  useEffect(() => {
+    if (!isSelectionMode || !containerRef.current) return;
+
+    const handleTap = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      // Check if the clicked element is a text span in the PDF
+      if (target.tagName === 'SPAN' && target.parentElement?.classList.contains('react-pdf__Page__textContent')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Select the text content of the clicked span
+        const text = target.textContent;
+        if (text && text.trim().length > 0) {
+          onTextSelected(text);
+          
+          // Visual feedback
+          const originalBg = target.style.backgroundColor;
+          target.style.backgroundColor = 'rgba(79, 70, 229, 0.3)'; // Indigo-500 with opacity
+          setTimeout(() => {
+            target.style.backgroundColor = originalBg;
+          }, 500);
+        }
+      }
+    };
+
+    const container = containerRef.current;
+    container.addEventListener('click', handleTap);
+    
+    return () => {
+      container.removeEventListener('click', handleTap);
+    };
+  }, [isSelectionMode, onTextSelected]);
 
   // Reset page when file changes
   useEffect(() => {
@@ -80,6 +118,20 @@ export default function PDFReader({ file, onTextSelected, onReset }: PDFReaderPr
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Mobile Selection Toggle */}
+          <button
+            onClick={() => setIsSelectionMode(!isSelectionMode)}
+            className={`p-2 rounded-lg transition-colors flex items-center gap-2 ${
+              isSelectionMode 
+                ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-500 ring-offset-1' 
+                : 'hover:bg-slate-100 text-slate-600'
+            }`}
+            title="Toggle Tap-to-Select Mode"
+          >
+            <MousePointerClick size={18} />
+            <span className="text-xs font-medium hidden sm:inline">Tap Select</span>
+          </button>
+
           <div className="flex items-center bg-slate-100 rounded-lg p-1">
             <button
               disabled={pageNumber <= 1}
@@ -122,7 +174,7 @@ export default function PDFReader({ file, onTextSelected, onReset }: PDFReaderPr
 
       {/* PDF Content */}
       <div 
-        className="flex-1 overflow-auto p-8 flex justify-center bg-slate-100/50"
+        className={`flex-1 overflow-auto p-8 flex justify-center bg-slate-100/50 ${isSelectionMode ? 'cursor-pointer' : ''}`}
         onMouseUp={handleMouseUp}
         ref={containerRef}
       >

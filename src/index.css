@@ -14,6 +14,12 @@
   .react-pdf__Page__annotations {
     @apply hidden;
   }
+  
+  /* Improve tap targets for text spans */
+  .react-pdf__Page__textContent span {
+    cursor: text;
+    padding: 2px 0; /* Increase vertical hit area slightly */
+  }
 }
 
 /* Custom scrollbar for the reader */
