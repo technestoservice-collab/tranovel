@@ -1,17 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, X, Sparkles, ArrowRight } from 'lucide-react';
+import { Upload, FileText, X, Sparkles, ArrowRight, LogOut, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { jwtDecode } from 'jwt-decode';
 import PDFReader from './components/PDFReader';
 import LanguageSelector from './components/LanguageSelector';
+import Login from './components/Login';
 import { translateText } from './services/gemini';
 
+interface UserProfile {
+  name: string;
+  email: string;
+  picture: string;
+}
+
 export default function App() {
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [selectedText, setSelectedText] = useState<string>('');
   const [translatedText, setTranslatedText] = useState<string>('');
   const [targetLanguage, setTargetLanguage] = useState<string>('চলমান বাংলা ভাষার');
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [showTranslation, setShowTranslation] = useState<boolean>(false);
+
+  // Check for existing session
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user_session');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('user_session');
+      }
+    }
+  }, []);
+
+  const handleLoginSuccess = (credentialResponse: any) => {
+    if (credentialResponse.credential) {
+      try {
+        const decoded: any = jwtDecode(credentialResponse.credential);
+        const userProfile = {
+          name: decoded.name,
+          email: decoded.email,
+          picture: decoded.picture
+        };
+        setUser(userProfile);
+        localStorage.setItem('user_session', JSON.stringify(userProfile));
+      } catch (error) {
+        console.error("Login failed", error);
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setFile(null);
+    localStorage.removeItem('user_session');
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -50,6 +94,10 @@ export default function App() {
     window.getSelection()?.removeAllRanges();
   };
 
+  if (!user) {
+    return <Login onSuccess={handleLoginSuccess} onError={() => console.log('Login Failed')} />;
+  }
+
   return (
     <div className="h-screen w-full bg-slate-50 flex flex-col font-sans text-slate-900">
       {/* Header */}
@@ -58,13 +106,13 @@ export default function App() {
           <div className="bg-indigo-600 p-1.5 rounded-lg">
             <Sparkles className="text-white" size={20} />
           </div>
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
+          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 hidden sm:block">
             Unika Tranovel
           </h1>
         </div>
         
         <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-500 hidden sm:inline">Translate to:</span>
+          <span className="text-sm text-slate-500 hidden md:inline">Translate to:</span>
           <LanguageSelector 
             selectedLanguage={targetLanguage} 
             onSelectLanguage={(lang) => {
@@ -75,6 +123,24 @@ export default function App() {
               }
             }} 
           />
+          
+          <div className="h-8 w-px bg-slate-200 mx-2 hidden sm:block" />
+          
+          <div className="flex items-center gap-3">
+            <img 
+              src={user.picture} 
+              alt={user.name} 
+              className="w-8 h-8 rounded-full border border-slate-200 hidden sm:block"
+              referrerPolicy="no-referrer"
+            />
+            <button 
+              onClick={handleLogout}
+              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-red-500 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
