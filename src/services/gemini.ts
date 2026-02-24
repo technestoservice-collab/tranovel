@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 // Note: In a real production app, you might want to proxy this through a backend to protect the key,
 // but for this client-side demo as per instructions, we use it directly if the user provides it.
 // The environment variable is injected by the platform.
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY || "AIzaSyDUHAFradgTJMDuxs6hZFM290EcRGMiVU8";
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export async function translateText(text: string, targetLanguage: string): Promise<string> {
